@@ -19,7 +19,7 @@ lb config noauto \
     --iso-volume "RIDA_OS_1_0" \
     --bootloader grub-efi \
     --bootappend-live "boot=live components quiet splash splash=silent vt.global_cursor_default=0 locales=en_US.UTF-8 keyboard-layouts=us" \
-    --security true \
+    --security false \
     --apt-recommends true \
     --memtest none \
     --source false \
