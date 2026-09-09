@@ -5,9 +5,8 @@ __pycache__/
 *.pyd
 
 # Build outputs
-output/*.iso
-output/*.log
-output/*.sha256
+output/
+output/*
 live-build/.build/
 live-build/chroot/
 live-build/binary/

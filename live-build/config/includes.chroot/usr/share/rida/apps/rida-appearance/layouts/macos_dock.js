@@ -2,7 +2,7 @@
 // Top Menu/Status Bar + Bottom Floating Dock
 
 var allPanels = panels();
-for (var i = 0; i < allPanels.length; i++) {
+for (var i = allPanels.length - 1; i >= 0; i--) {
     allPanels[i].remove();
 }
 

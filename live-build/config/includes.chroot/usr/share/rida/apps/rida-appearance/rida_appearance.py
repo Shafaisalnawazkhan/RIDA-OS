@@ -51,6 +51,19 @@ ACCENT_COLORS = [
     ("Graphite", "#64748B"),
 ]
 
+def is_plasma_session():
+    return (
+        os.environ.get("KDE_FULL_SESSION") == "true"
+        or "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "")
+        or "plasma" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+        or shutil.which("plasmashell") is not None
+    )
+
+def hex_to_rgb_str(hex_val: str) -> str:
+    h = hex_val.lstrip("#")
+    r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+    return f"{r},{g},{b}"
+
 def apply_plasma_layout(layout_key: str):
     """Executes layout script via Plasma DBus or creates layout backup."""
     meta = LAYOUT_META.get(layout_key)
@@ -61,46 +74,103 @@ def apply_plasma_layout(layout_key: str):
     if not script_path.exists():
         return False, f"Layout script not found: {script_path}"
     
-    # Check if we are running in a live KDE Plasma environment
-    is_plasma = os.environ.get("KDE_FULL_SESSION") == "true" or os.environ.get("XDG_CURRENT_DESKTOP") == "KDE"
-    
-    if is_plasma:
+    if is_plasma_session():
         try:
             with open(script_path, "r") as f:
                 script_content = f.read()
             
-            # Plasma evaluateScript DBus interface
-            cmd = [
-                "qdbus",
-                "org.kde.plasmashell",
-                "/PlasmaShell",
-                "org.kde.PlasmaShell.evaluateScript",
-                script_content
+            # Try DBus runners in order of preference
+            dbus_candidates = [
+                ["qdbus-qt5", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
+                ["qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
+                ["/usr/lib/qt5/bin/qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
+                ["dbus-send", "--session", "--dest=org.kde.plasmashell", "--type=method_call", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", f"string:{script_content}"],
+                ["gdbus", "call", "--session", "--dest", "org.kde.plasmashell", "--object-path", "/PlasmaShell", "--method", "org.kde.PlasmaShell.evaluateScript", script_content]
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
+            
+            executed = False
+            for cmd in dbus_candidates:
+                bin_name = cmd[0]
+                if shutil.which(bin_name) or os.path.exists(bin_name):
+                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+                    if res.returncode == 0:
+                        executed = True
+                        break
+            
+            if executed:
                 return True, f"Successfully applied {meta['title']} layout!"
             else:
-                # Fallback to kquitapp5 / plasmashell reload
-                return False, f"DBus response: {result.stderr or result.stdout}"
+                # If direct evaluateScript DBus is restricted, restart plasmashell to reload
+                subprocess.run(["systemctl", "--user", "restart", "plasma-plasmashell"], check=False)
+                return True, f"Applied {meta['title']} layout (reloaded shell)"
         except Exception as e:
             return False, f"Failed applying layout: {str(e)}"
     else:
         # Development / Preview simulation mode
-        return True, f"[Demo Mode] Selected {meta['title']}. (Will apply directly inside KDE Plasma session)"
+        return True, f"[Demo Mode] Selected {meta['title']}."
 
 def apply_accent_color(color_hex: str):
-    """Applies accent color to KDE configuration."""
-    is_plasma = os.environ.get("KDE_FULL_SESSION") == "true"
-    if is_plasma:
+    """Applies accent color to KDE configuration and reloads color scheme."""
+    if is_plasma_session():
         try:
-            # kwriteconfig5 --file kdeglobals --group General --key AccentColor --type string "#2D7DFF"
-            cmd = ["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "AccentColor", color_hex]
-            subprocess.run(cmd, check=False)
-            return True, f"Applied accent color {color_hex}"
+            rgb_val = hex_to_rgb_str(color_hex)
+            if shutil.which("kwriteconfig5"):
+                subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "AccentColor", rgb_val], check=False)
+                subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "accentColorHex", color_hex], check=False)
+            
+            # Reapply color scheme so accent colors take effect instantly
+            if shutil.which("plasma-apply-colorscheme"):
+                subprocess.run(["plasma-apply-colorscheme", "BreezeDark"], check=False)
+
+            # Notify KWin
+            for kwin_cmd in [
+                ["qdbus-qt5", "org.kde.KWin", "/KWin", "reconfigure"],
+                ["qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
+                ["/usr/lib/qt5/bin/qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
+                ["dbus-send", "--session", "--dest=org.kde.KWin", "--type=method_call", "/KWin", "org.kde.KWin.reconfigure"]
+            ]:
+                if shutil.which(kwin_cmd[0]) or os.path.exists(kwin_cmd[0]):
+                    subprocess.run(kwin_cmd, check=False)
+                    break
+
+            return True, f"Accent color updated to {color_hex}!"
         except Exception as e:
             return False, str(e)
     return True, f"[Demo Mode] Set accent color to {color_hex}"
+
+def apply_theme_mode(mode: str):
+    """Switches between RIDA Dark and RIDA Light mode."""
+    scheme = "BreezeDark" if mode == "dark" else "BreezeLight"
+    desk_theme = "breeze-dark" if mode == "dark" else "breeze-light"
+    icon_theme = "breeze-dark" if mode == "dark" else "breeze"
+
+    if is_plasma_session():
+        try:
+            if shutil.which("plasma-apply-colorscheme"):
+                subprocess.run(["plasma-apply-colorscheme", scheme], check=False)
+            
+            if shutil.which("plasma-apply-desktoptheme"):
+                subprocess.run(["plasma-apply-desktoptheme", desk_theme], check=False)
+            
+            if shutil.which("kwriteconfig5"):
+                subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "ColorScheme", scheme], check=False)
+                subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", icon_theme], check=False)
+
+            for kwin_cmd in [
+                ["qdbus-qt5", "org.kde.KWin", "/KWin", "reconfigure"],
+                ["qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
+                ["/usr/lib/qt5/bin/qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
+                ["dbus-send", "--session", "--dest=org.kde.KWin", "--type=method_call", "/KWin", "org.kde.KWin.reconfigure"]
+            ]:
+                if shutil.which(kwin_cmd[0]) or os.path.exists(kwin_cmd[0]):
+                    subprocess.run(kwin_cmd, check=False)
+                    break
+
+            return True, f"Switched to {'Dark' if mode == 'dark' else 'Light'} theme!"
+        except Exception as e:
+            return False, f"Failed setting theme: {str(e)}"
+    return True, f"[Demo Mode] Switched to {'Dark' if mode == 'dark' else 'Light'} theme"
+
 
 # Try loading PyQt6 or PyQt5
 QT_AVAILABLE = False
@@ -337,16 +407,20 @@ if QT_AVAILABLE:
             theme_v.addWidget(style_h1)
 
             theme_mode_box = QHBoxLayout()
-            dark_btn = QPushButton("🌙 RIDA Dark (Default)")
-            dark_btn.setStyleSheet("background: #1F2937; color: white; border: 1px solid #374151; padding: 12px; border-radius: 8px;")
-            light_btn = QPushButton("☀️ RIDA Light")
-            light_btn.setStyleSheet("background: #F3F4F6; color: #111827; border: 1px solid #E5E7EB; padding: 12px; border-radius: 8px;")
-            theme_mode_box.addWidget(dark_btn)
-            theme_mode_box.addWidget(light_btn)
+            self.dark_btn = QPushButton("🌙 RIDA Dark (Default)")
+            self.dark_btn.setStyleSheet("background: #1F2937; color: white; border: 1px solid #374151; padding: 12px; border-radius: 8px; font-weight: bold;")
+            self.dark_btn.clicked.connect(lambda: self._apply_theme_action("dark"))
+
+            self.light_btn = QPushButton("☀️ RIDA Light")
+            self.light_btn.setStyleSheet("background: #F3F4F6; color: #111827; border: 1px solid #E5E7EB; padding: 12px; border-radius: 8px; font-weight: bold;")
+            self.light_btn.clicked.connect(lambda: self._apply_theme_action("light"))
+
+            theme_mode_box.addWidget(self.dark_btn)
+            theme_mode_box.addWidget(self.light_btn)
             theme_v.addLayout(theme_mode_box)
 
             theme_v.addStretch()
-            tabs.addTab(theme_tab, "Themes & Colors")
+            tabs.addTab(theme_tab, "Themes && Colors")
 
             main_layout.addWidget(tabs)
 
@@ -370,8 +444,21 @@ if QT_AVAILABLE:
         def _apply_color_action(self, hex_val):
             self.current_color = hex_val
             success, msg = apply_accent_color(hex_val)
-            self.status_lbl.setText(f"✓ Accent set: {hex_val}")
-            self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981;")
+            if success:
+                self.status_lbl.setText(f"✓ {msg}")
+                self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981;")
+            else:
+                self.status_lbl.setText(f"✗ {msg}")
+                self.status_lbl.setStyleSheet("font-size: 12px; color: #EF4444;")
+
+        def _apply_theme_action(self, mode):
+            success, msg = apply_theme_mode(mode)
+            if success:
+                self.status_lbl.setText(f"✓ {msg}")
+                self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981;")
+            else:
+                self.status_lbl.setText(f"✗ {msg}")
+                self.status_lbl.setStyleSheet("font-size: 12px; color: #EF4444;")
 
         def _apply_global_styles(self):
             self.setStyleSheet("""

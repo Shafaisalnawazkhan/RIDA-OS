@@ -2,7 +2,7 @@
 // Single compact top or bottom panel with simple menu and grouped tasklist
 
 var allPanels = panels();
-for (var i = 0; i < allPanels.length; i++) {
+for (var i = allPanels.length - 1; i >= 0; i--) {
     allPanels[i].remove();
 }
 
