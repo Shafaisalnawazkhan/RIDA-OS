@@ -1,0 +1,35 @@
+# Calamares Branding Descriptor for RIDA OS
+---
+componentName:  rida
+
+welcomeStyleCalamares:   false
+welcomeExpandingLogo:    true
+windowExpanding:         normal
+windowSize: 850px, 560px
+windowPlacement: center
+
+strings:
+    productName:         "RIDA OS"
+    shortProductName:    "RIDA"
+    version:             "1.0 (Sapphire)"
+    shortVersion:        "1.0"
+    versionedName:       "RIDA OS 1.0 (Sapphire)"
+    shortVersionedName:  "RIDA OS 1.0"
+    bootloaderEntryName: "RIDA OS"
+    productUrl:          "https://github.com/rida-os"
+    supportUrl:          "https://github.com/rida-os/community"
+    knownIssuesUrl:      "https://github.com/rida-os/issues"
+    releaseNotesUrl:     "https://github.com/rida-os/releases"
+
+images:
+    productLogo:         "/usr/share/rida/icons/rida-logo.svg"
+    productIcon:         "/usr/share/rida/icons/rida-logo.svg"
+    productWelcome:      "/usr/share/rida/wallpapers/rida-welcome-banner.svg"
+
+slideshow:               "show.qml"
+
+style:
+   SidebarBackground:    "#141820"
+   SidebarText:          "#FFFFFF"
+   SidebarTextCurrent:   "#2D7DFF"
+   SidebarBackgroundCurrent: "#1E2533"

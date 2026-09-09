@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Welcome to RIDA OS
+Comment=First-boot onboarding and desktop setup
+Exec=python3 /usr/share/rida/apps/rida-welcome/rida_welcome.py
+Icon=help-about
+Terminal=false
+Type=Application
+X-KDE-autostart-phase=2

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec python3 /usr/share/rida/apps/rida-appearance/rida_appearance.py "$@"

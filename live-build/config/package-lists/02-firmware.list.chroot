@@ -1,0 +1,16 @@
+# Comprehensive Non-free & Proprietary Hardware Firmware
+# Ensures Wi-Fi, Bluetooth, GPU acceleration work out of the box
+firmware-linux
+firmware-linux-nonfree
+firmware-misc-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+firmware-intel-sound
+firmware-sof-signed
+firmware-amd-graphics
+bluez
+bluez-firmware
+intel-microcode
+amd64-microcode

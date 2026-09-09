@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+echo "Applying RIDA OS Branding & Boot Configuration..."
+
+# Configure Plymouth Theme if present
+if [ -d /usr/share/plymouth/themes/rida-pulse ]; then
+    plymouth-set-default-theme -R rida-pulse || true
+fi
+
+# Enable SDDM display manager
+systemctl enable sddm || true
+
+# Update initramfs
+if command -v update-initramfs >/dev/null 2>&1; then
+    update-initramfs -u -k all || true
+fi

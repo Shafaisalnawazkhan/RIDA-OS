@@ -1,0 +1,17 @@
+[General]
+ColorScheme=BreezeDark
+AccentColor=45,125,255
+Name=Breeze Dark
+fixed=Hack,10,-1,5,50,0,0,0,0,0
+font=Noto Sans,10,-1,5,50,0,0,0,0,0
+menuFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+smallestReadableFont=Noto Sans,8,-1,5,50,0,0,0,0,0
+toolBarFont=Noto Sans,10,-1,5,50,0,0,0,0,0
+windowTitleFont=Noto Sans,10,-1,5,63,0,0,0,0,0
+
+[KDE]
+ShowDeleteCommand=false
+SingleClick=false
+
+[Icons]
+Theme=breeze-dark

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="wbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+    <linearGradient id="wbAcc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#wbGrad)" />
+  <circle cx="400" cy="200" r="160" fill="#2563EB" opacity="0.12" />
+
+  <!-- RIDA Emblem -->
+  <g transform="translate(336, 100) scale(0.5)">
+    <polygon points="128,44 204,128 128,212 52,128" fill="url(#wbAcc)" />
+  </g>
+
+  <text x="400" y="270" text-anchor="middle" fill="#FFFFFF" font-family="'Noto Sans', sans-serif" font-size="28" font-weight="800">RIDA OS 1.0</text>
+  <text x="400" y="300" text-anchor="middle" fill="#38BDF8" font-family="'Noto Sans', sans-serif" font-size="14" font-weight="600" letter-spacing="2">SAPPHIRE EDITION</text>
+  <text x="400" y="335" text-anchor="middle" fill="#94A3B8" font-family="'Noto Sans', sans-serif" font-size="13">Debian Stability • KDE Plasma Elegance</text>
+</svg>

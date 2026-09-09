@@ -1,0 +1,11 @@
+PRETTY_NAME="RIDA OS 1.0 (Sapphire)"
+NAME="RIDA OS"
+VERSION_ID="1.0"
+VERSION="1.0 (Sapphire)"
+VERSION_CODENAME=bookworm
+ID=rida
+ID_LIKE=debian
+HOME_URL="https://github.com/rida-os"
+SUPPORT_URL="https://github.com/rida-os/community"
+BUG_REPORT_URL="https://github.com/rida-os/issues"
+LOGO="rida-logo"

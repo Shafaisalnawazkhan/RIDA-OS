@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3840 2160" width="3840" height="2160">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C14" />
+      <stop offset="40%" stop-color="#0F172A" />
+      <stop offset="70%" stop-color="#111B33" />
+      <stop offset="100%" stop-color="#070A10" />
+    </linearGradient>
+
+    <linearGradient id="facet1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#1E40AF" stop-opacity="0.05" />
+    </linearGradient>
+
+    <linearGradient id="facet2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.30" />
+      <stop offset="100%" stop-color="#0284C7" stop-opacity="0.02" />
+    </linearGradient>
+
+    <radialGradient id="glow" cx="60%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.25" />
+      <stop offset="60%" stop-color="#1D4ED8" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Deep dark canvas -->
+  <rect width="3840" height="2160" fill="url(#bgGrad)"/>
+  <rect width="3840" height="2160" fill="url(#glow)"/>
+
+  <!-- Fluid geometric flowing facets -->
+  <polygon points="0,2160 1200,900 2200,1600 3840,800 3840,2160" fill="url(#facet1)"/>
+  <polygon points="1400,0 2800,1100 3840,400 3840,0" fill="url(#facet2)"/>
+  <polygon points="600,0 1920,1080 3240,0" fill="url(#facet1)" opacity="0.4"/>
+  <polygon points="800,2160 1920,1200 3040,2160" fill="url(#facet2)" opacity="0.3"/>
+
+  <!-- Subtle RIDA watermark in center -->
+  <g transform="translate(1820, 980) scale(0.8)" opacity="0.4">
+    <path d="M128 44 L204 128 L128 212 L52 128 Z" fill="none" stroke="#60A5FA" stroke-width="4"/>
+    <text x="128" y="270" text-anchor="middle" fill="#94A3B8" font-family="'Noto Sans', 'Inter', sans-serif" font-size="32" font-weight="700" letter-spacing="8">RIDA OS</text>
+  </g>
+</svg>

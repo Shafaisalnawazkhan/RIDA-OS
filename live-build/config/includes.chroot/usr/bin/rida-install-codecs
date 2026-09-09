@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+echo "======================================================"
+echo "         INSTALLING RIDA MULTIMEDIA CODECS            "
+echo "======================================================"
+echo ""
+
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root or with sudo:"
+    echo "sudo rida-install-codecs"
+    exit 1
+fi
+
+apt-get update
+apt-get install -y \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    ffmpeg \
+    vlc \
+    libdvd-pkg
+
+dpkg-reconfigure libdvd-pkg || true
+
+echo ""
+echo "[✓] All multimedia codecs installed successfully!"

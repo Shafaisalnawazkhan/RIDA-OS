@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+echo "Registering RIDA Companion Tools (Appearance & Welcome)..."
+
+# Ensure tools in /usr/bin are executable
+chmod +x /usr/bin/rida-appearance || true
+chmod +x /usr/bin/rida-welcome || true
+chmod +x /usr/bin/rida-driver-check || true
+chmod +x /usr/bin/rida-install-codecs || true
+
+# Update desktop database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
+fi

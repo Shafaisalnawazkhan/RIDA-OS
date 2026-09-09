@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Welcome to RIDA OS
+Comment=First-boot tour, setup wizard, and app recommendations
+Exec=python3 /usr/share/rida/apps/rida-welcome/rida_welcome.py
+Icon=help-about
+Terminal=false
+Type=Application
+Categories=System;Settings;Qt;KDE;
+StartupNotify=true

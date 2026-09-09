@@ -1,0 +1,8 @@
+# GRUB configuration for RIDA OS
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="RIDA OS"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash vt.global_cursor_default=0"
+GRUB_CMDLINE_LINUX=""
+GRUB_THEME="/usr/share/grub/themes/rida/theme.txt"
+GRUB_GFXMODE="1920x1080,1366x768,auto"

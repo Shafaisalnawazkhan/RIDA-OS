@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=RIDA Pulse
+Description=A sleek minimalist boot splash with glowing RIDA emblem
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/rida-pulse
+ScriptFile=/usr/share/plymouth/themes/rida-pulse/rida-pulse.script

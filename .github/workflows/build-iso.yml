@@ -1,0 +1,43 @@
+name: Build RIDA OS ISO
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            live-build \
+            debootstrap \
+            xorriso \
+            squashfs-tools \
+            isolinux \
+            syslinux-efi \
+            grub-pc-bin \
+            grub-efi-amd64-bin \
+            mtools \
+            dosfstools \
+            rsync
+
+      - name: Build RIDA OS ISO Image
+        run: |
+          chmod +x builder/build-iso.sh
+          sudo ./builder/build-iso.sh
+
+      - name: Upload ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rida-os-1.0-amd64
+          path: |
+            output/rida-os-1.0-amd64.iso
+            output/rida-os-1.0-amd64.iso.sha256
+          retention-days: 14

@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build outputs
+output/*.iso
+output/*.log
+output/*.sha256
+live-build/.build/
+live-build/chroot/
+live-build/binary/
+live-build/cache/
+
+# OS and Editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=RIDA Appearance
+Comment=Switch desktop layouts and customize accent colors
+Exec=python3 /usr/share/rida/apps/rida-appearance/rida_appearance.py
+Icon=preferences-desktop-theme
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;Qt;KDE;
+StartupNotify=true
+Keywords=layout;theme;appearance;zorin;windows;macos;

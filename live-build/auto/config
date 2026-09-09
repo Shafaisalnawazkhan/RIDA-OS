@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+
+# Debian Live Build configuration for RIDA OS
+# Distribution: Debian 12 (Bookworm)
+# Architecture: amd64
+# Desktop: KDE Plasma with Calamares Installer
+
+lb config noauto \
+    --mode debian \
+    --distribution bookworm \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --architectures amd64 \
+    --linux-flavours amd64 \
+    --binary-images iso-hybrid \
+    --image-name "rida-os-1.0-amd64" \
+    --iso-application "RIDA OS Live/Installable" \
+    --iso-preparer "RIDA OS Engineering <https://github.com/rida-os>" \
+    --iso-publisher "RIDA OS Community" \
+    --iso-volume "RIDA_OS_1_0" \
+    --bootloader grub-efi \
+    --bootappend-live "boot=live components quiet splash splash=silent vt.global_cursor_default=0 locales=en_US.UTF-8 keyboard-layouts=us" \
+    --security true \
+    --updates true \
+    --backports false \
+    --apt-recommends true \
+    --memtest none \
+    --source false \
+    --checksums sha256 \
+    "${@}"

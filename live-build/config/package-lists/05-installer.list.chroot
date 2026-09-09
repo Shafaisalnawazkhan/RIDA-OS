@@ -1,0 +1,14 @@
+# Calamares Graphical Installer & Storage Partitioning Utilities
+calamares
+calamares-settings-debian
+gparted
+parted
+dosfstools
+e2fsprogs
+btrfs-progs
+xfsprogs
+ntfs-3g
+squashfs-tools
+cryptsetup
+rsync
+kdesudo || sudo

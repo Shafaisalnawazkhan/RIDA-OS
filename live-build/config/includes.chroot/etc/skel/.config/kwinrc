@@ -1,0 +1,14 @@
+[Desktops]
+Number=2
+Rows=1
+
+[Windows]
+AutoRaise=false
+FocusPolicy=ClickToFocus
+
+[Plugins]
+blurEnabled=true
+contrastEnabled=true
+slideEnabled=true
+desktopgridEnabled=true
+translucencyEnabled=true

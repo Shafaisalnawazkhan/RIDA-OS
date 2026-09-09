@@ -1,0 +1,18 @@
+# Curated Applications, Multimedia Codecs, and Discover Flatpak App Store
+firefox-esr
+vlc
+plasma-discover
+plasma-discover-backend-flatpak
+flatpak
+xdg-desktop-portal-kde
+xdg-desktop-portal
+ffmpeg
+gstreamer1.0-plugins-base
+gstreamer1.0-plugins-good
+gstreamer1.0-plugins-bad
+gstreamer1.0-plugins-ugly
+gstreamer1.0-libav
+software-properties-common
+packagekit
+synaptic
+libdvd-pkg

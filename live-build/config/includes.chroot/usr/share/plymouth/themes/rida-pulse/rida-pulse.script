@@ -1,0 +1,28 @@
+# Plymouth Script for RIDA OS
+# Deep charcoal background with subtle pulsing logo
+
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+
+# Solid dark canvas
+Window.SetBackgroundTopColor(0.05, 0.07, 0.10);
+Window.SetBackgroundBottomColor(0.04, 0.05, 0.08);
+
+# Load logo or draw text
+logo_image = Image("rida-logo.png");
+if (logo_image) {
+    logo_sprite = Sprite(logo_image);
+    logo_sprite.SetX(screen_width / 2 - logo_image.GetWidth() / 2);
+    logo_sprite.SetY(screen_height / 2 - logo_image.GetHeight() / 2 - 40);
+}
+
+progress = 0;
+fun refresh_callback() {
+    progress++;
+    # Subtle opacity breathing effect
+    opacity = 0.6 + 0.4 * Math.Sin(progress / 25);
+    if (logo_sprite) {
+        logo_sprite.SetOpacity(opacity);
+    }
+}
+Plymouth.SetRefreshFunction(refresh_callback);

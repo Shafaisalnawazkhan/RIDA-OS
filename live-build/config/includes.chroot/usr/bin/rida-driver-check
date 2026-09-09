@@ -1,0 +1,27 @@
+#!/bin/bash
+# Hardware & Driver Status Diagnostic for RIDA OS
+echo "======================================================"
+echo "             RIDA OS HARDWARE DIAGNOSTICS             "
+echo "======================================================"
+echo ""
+echo "[*] System Architecture:"
+uname -m -r
+
+echo ""
+echo "[*] Processor Info:"
+grep -m 1 "model name" /proc/cpuinfo || true
+
+echo ""
+echo "[*] Network & Wireless Controllers:"
+lspci -nnk | grep -iA2 -E "net|ether|wire" || echo "No PCI network controllers found."
+
+echo ""
+echo "[*] Display / Graphics Controllers:"
+lspci -nnk | grep -iA3 -E "vga|3d|display" || echo "Standard display adapter."
+
+echo ""
+echo "[*] Kernel Firmware Status (Checking for missing firmware warnings):"
+dmesg | grep -i "firmware: failed to load" || echo "No missing firmware detected! System is running cleanly."
+
+echo ""
+echo "======================================================"

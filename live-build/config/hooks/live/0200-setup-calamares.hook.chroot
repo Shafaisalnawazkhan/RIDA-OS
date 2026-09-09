@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+echo "Setting up Calamares Installer for Live Session..."
+
+# Ensure /etc/sudoers allows live user to run calamares without password
+mkdir -p /etc/sudoers.d
+echo "user ALL=(ALL) NOPASSWD: /usr/bin/calamares" > /etc/sudoers.d/99-calamares
+chmod 0440 /etc/sudoers.d/99-calamares
+
+# Ensure desktop shortcut is marked executable
+if [ -f /etc/skel/Desktop/calamares.desktop ]; then
+    chmod +x /etc/skel/Desktop/calamares.desktop
+fi

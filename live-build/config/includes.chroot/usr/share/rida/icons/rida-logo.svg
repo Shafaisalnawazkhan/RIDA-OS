@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gradRida" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="gradAcc" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#93C5FD" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1D4ED8" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect x="24" y="24" width="208" height="208" rx="48" fill="#0F172A" stroke="#1E293B" stroke-width="4"/>
+
+  <!-- Glowing Emblem -->
+  <g filter="url(#shadow)">
+    <!-- Main outer diamond / ring segment -->
+    <path d="M128 44 L204 128 L128 212 L52 128 Z" fill="url(#gradRida)" />
+    <!-- Inner faceted geometry -->
+    <path d="M128 68 L180 128 L128 188 L76 128 Z" fill="#0B132B" />
+    <!-- Central RIDA "R" Monogram -->
+    <path d="M110 96 H138 C148 96 156 104 156 114 C156 124 148 132 138 132 H110 V96 Z" fill="url(#gradAcc)" />
+    <path d="M110 132 H124 L146 160 H130 L110 136 V160 H98 V96 H110 Z" fill="#FFFFFF" />
+  </g>
+</svg>
