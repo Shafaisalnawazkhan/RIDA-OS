@@ -35,7 +35,7 @@ echo "    This will download packages, bootstrap the rootfs, and package the ISO
 lb build 2>&1 | tee "${OUTPUT_DIR}/build.log"
 
 echo "[+] Step 4: Finalizing release image..."
-ISO_FILE=$(find . -maxdepth 1 -name "*.iso" | head -n 1)
+ISO_FILE=$(find . -name "*.iso" | head -n 1)
 
 if [ -n "${ISO_FILE}" ] && [ -f "${ISO_FILE}" ]; then
     FINAL_NAME="rida-os-1.0-amd64.iso"

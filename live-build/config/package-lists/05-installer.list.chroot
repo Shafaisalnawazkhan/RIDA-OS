@@ -11,4 +11,4 @@ ntfs-3g
 squashfs-tools
 cryptsetup
 rsync
-kdesudo || sudo
+sudo
