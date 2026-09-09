@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-RIDA OS Appearance Tool
-Allows users to switch between desktop layouts (Windows Classic, Windows Modern, macOS, Compact)
-and customize system accent colors and theming. Inspired by Zorin Appearance.
+RIDA OS Appearance Tool — Modern Zorin / Win11 Aesthetic
+Switch desktop layouts, customize accent colors, toggle themes,
+and set custom wallpapers with instant live preview.
 """
 
 import sys
@@ -11,44 +11,47 @@ import subprocess
 import shutil
 from pathlib import Path
 
-# Detect layout scripts directory
 SCRIPT_DIR = Path(__file__).parent.resolve()
 LAYOUTS_DIR = SCRIPT_DIR / "layouts"
 
 LAYOUT_META = {
     "windows_classic": {
         "title": "Windows Standard",
-        "desc": "Classic desktop with bottom taskbar, start menu on left, and system tray.",
+        "badge": "RECOMMENDED FOR SWITCHERS",
+        "desc": "Classic bottom taskbar with Start Menu on left, pinned apps, and system tray.",
         "script": LAYOUTS_DIR / "windows_classic.js",
-        "tag": "Recommended for Windows 7/10 switchers",
+        "preview": "win_classic",
     },
     "windows_modern": {
         "title": "Windows Modern",
-        "desc": "Contemporary centered taskbar with floating panel and quick search.",
+        "badge": "MODERN CENTERED",
+        "desc": "Contemporary centered floating taskbar with quick search and grouped icons.",
         "script": LAYOUTS_DIR / "windows_modern.js",
-        "tag": "Windows 11 inspired aesthetic",
+        "preview": "win_modern",
     },
     "macos_dock": {
         "title": "Cupertino (macOS)",
-        "desc": "Top status bar with global menu plus a floating bottom application dock.",
+        "badge": "ELEGANT DOCK",
+        "desc": "Top global menu & status bar paired with a floating bottom application dock.",
         "script": LAYOUTS_DIR / "macos_dock.js",
-        "tag": "Intuitive for macOS switchers",
+        "preview": "macos",
     },
     "compact": {
         "title": "Compact / Minimal",
-        "desc": "Lightweight top panel with grouped task list for maximum screen real-estate.",
+        "badge": "MAX REAL ESTATE",
+        "desc": "Lightweight top bar with minimalist launcher for laptops and widescreen monitors.",
         "script": LAYOUTS_DIR / "compact.js",
-        "tag": "Great for laptops & ultra-wide monitors",
+        "preview": "compact",
     },
 }
 
 ACCENT_COLORS = [
-    ("Sapphire", "#2D7DFF"),
-    ("Emerald", "#10B981"),
-    ("Amethyst", "#8B5CF6"),
-    ("Ruby", "#EF4444"),
-    ("Amber", "#F59E0B"),
-    ("Graphite", "#64748B"),
+    ("Sapphire", "#2563EB", "45,125,255"),
+    ("Cyan", "#06B6D4", "6,182,212"),
+    ("Emerald", "#10B981", "16,185,129"),
+    ("Amethyst", "#8B5CF6", "139,92,246"),
+    ("Rose", "#F43F5E", "244,63,94"),
+    ("Amber", "#F59E0B", "245,158,11"),
 ]
 
 def is_plasma_session():
@@ -59,84 +62,73 @@ def is_plasma_session():
         or shutil.which("plasmashell") is not None
     )
 
-def hex_to_rgb_str(hex_val: str) -> str:
-    h = hex_val.lstrip("#")
-    r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-    return f"{r},{g},{b}"
+def run_dbus_eval(script_content: str):
+    """Executes plasma javascript script using available dbus tools."""
+    candidates = [
+        ["qdbus-qt5", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
+        ["qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
+        ["/usr/lib/qt5/bin/qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
+        ["dbus-send", "--session", "--dest=org.kde.plasmashell", "--type=method_call", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", f"string:{script_content}"],
+        ["gdbus", "call", "--session", "--dest", "org.kde.plasmashell", "--object-path", "/PlasmaShell", "--method", "org.kde.PlasmaShell.evaluateScript", script_content]
+    ]
+    for cmd in candidates:
+        if shutil.which(cmd[0]) or os.path.exists(cmd[0]):
+            try:
+                res = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+                if res.returncode == 0:
+                    return True
+            except Exception:
+                pass
+    return False
 
 def apply_plasma_layout(layout_key: str):
-    """Executes layout script via Plasma DBus or creates layout backup."""
+    """Executes layout script via Plasma DBus."""
     meta = LAYOUT_META.get(layout_key)
     if not meta:
         return False, "Unknown layout key"
     
     script_path = meta["script"]
     if not script_path.exists():
-        return False, f"Layout script not found: {script_path}"
+        return False, f"Script not found: {script_path}"
     
     if is_plasma_session():
         try:
             with open(script_path, "r") as f:
-                script_content = f.read()
+                content = f.read()
             
-            # Try DBus runners in order of preference
-            dbus_candidates = [
-                ["qdbus-qt5", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
-                ["qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
-                ["/usr/lib/qt5/bin/qdbus", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script_content],
-                ["dbus-send", "--session", "--dest=org.kde.plasmashell", "--type=method_call", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", f"string:{script_content}"],
-                ["gdbus", "call", "--session", "--dest", "org.kde.plasmashell", "--object-path", "/PlasmaShell", "--method", "org.kde.PlasmaShell.evaluateScript", script_content]
-            ]
-            
-            executed = False
-            for cmd in dbus_candidates:
-                bin_name = cmd[0]
-                if shutil.which(bin_name) or os.path.exists(bin_name):
-                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
-                    if res.returncode == 0:
-                        executed = True
-                        break
-            
-            if executed:
-                return True, f"Successfully applied {meta['title']} layout!"
-            else:
-                # If direct evaluateScript DBus is restricted, restart plasmashell to reload
+            ok = run_dbus_eval(content)
+            if not ok:
                 subprocess.run(["systemctl", "--user", "restart", "plasma-plasmashell"], check=False)
-                return True, f"Applied {meta['title']} layout (reloaded shell)"
+            return True, f"Successfully applied {meta['title']} layout!"
         except Exception as e:
-            return False, f"Failed applying layout: {str(e)}"
-    else:
-        # Development / Preview simulation mode
-        return True, f"[Demo Mode] Selected {meta['title']}."
+            return False, f"Failed: {str(e)}"
+    return True, f"[Demo Mode] Selected {meta['title']}."
 
-def apply_accent_color(color_hex: str):
+def apply_accent_color(color_name: str, color_hex: str, rgb_str: str):
     """Applies accent color to KDE configuration and reloads color scheme."""
     if is_plasma_session():
         try:
-            rgb_val = hex_to_rgb_str(color_hex)
             if shutil.which("kwriteconfig5"):
-                subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "AccentColor", rgb_val], check=False)
+                subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "AccentColor", rgb_str], check=False)
                 subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "accentColorHex", color_hex], check=False)
-            
-            # Reapply color scheme so accent colors take effect instantly
+
             if shutil.which("plasma-apply-colorscheme"):
                 subprocess.run(["plasma-apply-colorscheme", "BreezeDark"], check=False)
 
             # Notify KWin
-            for kwin_cmd in [
+            for cmd in [
                 ["qdbus-qt5", "org.kde.KWin", "/KWin", "reconfigure"],
                 ["qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
                 ["/usr/lib/qt5/bin/qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
                 ["dbus-send", "--session", "--dest=org.kde.KWin", "--type=method_call", "/KWin", "org.kde.KWin.reconfigure"]
             ]:
-                if shutil.which(kwin_cmd[0]) or os.path.exists(kwin_cmd[0]):
-                    subprocess.run(kwin_cmd, check=False)
+                if shutil.which(cmd[0]) or os.path.exists(cmd[0]):
+                    subprocess.run(cmd, check=False)
                     break
-
-            return True, f"Accent color updated to {color_hex}!"
+            return True, f"Accent color set to {color_name} ({color_hex})!"
         except Exception as e:
             return False, str(e)
-    return True, f"[Demo Mode] Set accent color to {color_hex}"
+    return True, f"[Demo Mode] Set accent color to {color_name}"
 
 def apply_theme_mode(mode: str):
     """Switches between RIDA Dark and RIDA Light mode."""
@@ -148,31 +140,32 @@ def apply_theme_mode(mode: str):
         try:
             if shutil.which("plasma-apply-colorscheme"):
                 subprocess.run(["plasma-apply-colorscheme", scheme], check=False)
-            
             if shutil.which("plasma-apply-desktoptheme"):
                 subprocess.run(["plasma-apply-desktoptheme", desk_theme], check=False)
-            
             if shutil.which("kwriteconfig5"):
                 subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "General", "--key", "ColorScheme", scheme], check=False)
                 subprocess.run(["kwriteconfig5", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", icon_theme], check=False)
-
-            for kwin_cmd in [
-                ["qdbus-qt5", "org.kde.KWin", "/KWin", "reconfigure"],
-                ["qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
-                ["/usr/lib/qt5/bin/qdbus", "org.kde.KWin", "/KWin", "reconfigure"],
-                ["dbus-send", "--session", "--dest=org.kde.KWin", "--type=method_call", "/KWin", "org.kde.KWin.reconfigure"]
-            ]:
-                if shutil.which(kwin_cmd[0]) or os.path.exists(kwin_cmd[0]):
-                    subprocess.run(kwin_cmd, check=False)
-                    break
-
-            return True, f"Switched to {'Dark' if mode == 'dark' else 'Light'} theme!"
+            return True, f"Switched to {'RIDA Dark' if mode == 'dark' else 'RIDA Light'} theme!"
         except Exception as e:
-            return False, f"Failed setting theme: {str(e)}"
-    return True, f"[Demo Mode] Switched to {'Dark' if mode == 'dark' else 'Light'} theme"
+            return False, str(e)
+    return True, f"[Demo Mode] Switched to {'Dark' if mode == 'dark' else 'Light'} mode"
 
+def apply_wallpaper(wp_path: str):
+    """Sets wallpaper on all active desktop screens."""
+    script = f"""
+    var allDesktops = desktops();
+    for (var i=0; i<allDesktops.length; i++) {{
+        allDesktops[i].wallpaperPlugin = 'org.kde.image';
+        allDesktops[i].currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+        allDesktops[i].writeConfig('Image', '{wp_path}');
+    }}
+    """
+    if is_plasma_session():
+        run_dbus_eval(script)
+        return True, "Wallpaper updated to RIDA Sapphire!"
+    return True, f"[Demo Mode] Wallpaper set to {wp_path}"
 
-# Try loading PyQt6 or PyQt5
+# PyQt6 Setup
 QT_AVAILABLE = False
 try:
     from PyQt6.QtWidgets import (
@@ -181,83 +174,136 @@ try:
         QScrollArea, QMessageBox, QTabWidget, QGridLayout
     )
     from PyQt6.QtCore import Qt, QSize
-    from PyQt6.QtGui import QFont, QIcon, QColor, QPalette
+    from PyQt6.QtGui import QFont, QIcon, QColor, QPainter, QBrush, QPen
     QT_AVAILABLE = True
-    QT_VERSION = 6
 except ImportError:
-    try:
-        from PyQt5.QtWidgets import (
-            QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-            QLabel, QPushButton, QFrame, QRadioButton, QButtonGroup,
-            QScrollArea, QMessageBox, QTabWidget, QGridLayout
-        )
-        from PyQt5.QtCore import Qt, QSize
-        from PyQt5.QtGui import QFont, QIcon, QColor, QPalette
-        QT_AVAILABLE = True
-        QT_VERSION = 5
-    except ImportError:
-        QT_AVAILABLE = False
-
+    pass
 
 if QT_AVAILABLE:
-    class LayoutCard(QFrame):
+    class LayoutMiniPreview(QFrame):
+        """Draws a visual schematic representation of the desktop layout."""
+        def __init__(self, p_type, parent=None):
+            super().__init__(parent)
+            self.p_type = p_type
+            self.setFixedHeight(72)
+            self.setStyleSheet("background: #0D1117; border-radius: 8px; border: 1px solid #21262D;")
+
+        def paintEvent(self, event):
+            super().paintEvent(event)
+            p = QPainter(self)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            w = self.width()
+            h = self.height()
+
+            # Mini windows inside preview
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor("#1F2937"))
+            p.drawRoundedRect(16, 12, int(w * 0.45), 34, 4, 4)
+            p.setBrush(QColor("#273346"))
+            p.drawRoundedRect(int(w * 0.40), 18, int(w * 0.45), 32, 4, 4)
+
+            # Active layout bar
+            accent = QColor("#2563EB")
+            dot = QColor("#60A5FA")
+
+            if self.p_type == "win_classic":
+                # Bottom taskbar
+                p.setBrush(QColor("#161B22"))
+                p.drawRect(0, h - 14, w, 14)
+                # Start button
+                p.setBrush(accent)
+                p.drawRoundedRect(8, h - 11, 8, 8, 2, 2)
+                # App icons
+                p.setBrush(dot)
+                p.drawRoundedRect(22, h - 10, 6, 6, 1, 1)
+                p.drawRoundedRect(32, h - 10, 6, 6, 1, 1)
+                # Tray
+                p.setBrush(QColor("#64748B"))
+                p.drawRoundedRect(w - 24, h - 10, 16, 6, 1, 1)
+
+            elif self.p_type == "win_modern":
+                # Floating centered taskbar
+                p.setBrush(QColor("#161B22"))
+                bar_w = int(w * 0.65)
+                bar_x = int((w - bar_w) / 2)
+                p.drawRoundedRect(bar_x, h - 16, bar_w, 12, 6, 6)
+                p.setBrush(accent)
+                p.drawRoundedRect(bar_x + 12, h - 13, 6, 6, 1, 1)
+                p.setBrush(dot)
+                p.drawRoundedRect(bar_x + 24, h - 13, 6, 6, 1, 1)
+                p.drawRoundedRect(bar_x + 36, h - 13, 6, 6, 1, 1)
+
+            elif self.p_type == "macos":
+                # Top status bar
+                p.setBrush(QColor("#161B22"))
+                p.drawRect(0, 0, w, 10)
+                p.setBrush(dot)
+                p.drawEllipse(8, 2, 6, 6)
+                # Floating bottom dock
+                p.setBrush(QColor("#161B22"))
+                dock_w = int(w * 0.50)
+                dock_x = int((w - dock_w) / 2)
+                p.drawRoundedRect(dock_x, h - 14, dock_w, 12, 6, 6)
+                p.setBrush(accent)
+                for di in range(4):
+                    p.drawRoundedRect(dock_x + 10 + (di * 12), h - 11, 6, 6, 1, 1)
+
+            elif self.p_type == "compact":
+                # Minimalist slim top panel
+                p.setBrush(QColor("#161B22"))
+                p.drawRect(0, 0, w, 12)
+                p.setBrush(accent)
+                p.drawRoundedRect(6, 2, 8, 8, 2, 2)
+                p.setBrush(dot)
+                p.drawRoundedRect(20, 3, 24, 6, 1, 1)
+            p.end()
+
+    class ModernLayoutCard(QFrame):
         def __init__(self, key, meta, on_select, parent=None):
             super().__init__(parent)
             self.key = key
             self.on_select = on_select
             self.setObjectName("LayoutCard")
-            self.setCursor(Qt.CursorShape.PointingHandCursor if QT_VERSION == 6 else Qt.PointingHandCursor)
-            
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+
             layout = QVBoxLayout(self)
             layout.setContentsMargins(16, 16, 16, 16)
-            layout.setSpacing(8)
-            
+            layout.setSpacing(10)
+
+            # Header
             header = QHBoxLayout()
             title = QLabel(meta["title"])
-            title.setStyleSheet("font-size: 15px; font-weight: bold; color: #FFFFFF;")
+            title.setStyleSheet("font-size: 15px; font-weight: 700; color: #FFFFFF;")
             header.addWidget(title)
-            
             header.addStretch()
+
             self.radio = QRadioButton()
             header.addWidget(self.radio)
             layout.addLayout(header)
-            
-            tag = QLabel(meta["tag"].upper())
-            tag.setStyleSheet("font-size: 10px; font-weight: 600; color: #2D7DFF; letter-spacing: 0.5px;")
-            layout.addWidget(tag)
-            
+
+            # Badge
+            badge = QLabel(meta["badge"])
+            badge.setStyleSheet("font-size: 9px; font-weight: 800; color: #38BDF8; letter-spacing: 0.8px;")
+            layout.addWidget(badge)
+
+            # Description
             desc = QLabel(meta["desc"])
             desc.setWordWrap(True)
-            desc.setStyleSheet("font-size: 12px; color: #A0AEC0;")
+            desc.setStyleSheet("font-size: 12px; color: #94A3B8; line-height: 1.4;")
             layout.addWidget(desc)
-            
-            # Schematic visual preview of the layout
-            preview = QFrame()
-            preview.setFixedHeight(54)
-            preview.setStyleSheet(self._get_preview_style(key))
-            layout.addWidget(preview)
-            
-            self.radio.toggled.connect(self._on_toggled)
 
-        def _get_preview_style(self, key):
-            base = "background: #11141A; border: 1px solid #2D3748; border-radius: 6px; position: relative;"
-            if key == "windows_classic":
-                # bottom line
-                return base + " border-bottom: 5px solid #2D7DFF;"
-            elif key == "windows_modern":
-                return base + " border-bottom: 5px solid #2D7DFF; margin-left: 20px; margin-right: 20px;"
-            elif key == "macos_dock":
-                return base + " border-top: 3px solid #2D7DFF; border-bottom: 4px solid #10B981;"
-            elif key == "compact":
-                return base + " border-top: 4px solid #2D7DFF;"
-            return base
+            # Graphic Mini Preview
+            preview = LayoutMiniPreview(meta["preview"])
+            layout.addWidget(preview)
+
+            self.radio.toggled.connect(self._on_toggled)
 
         def _on_toggled(self, checked):
             if checked:
                 self.setStyleSheet("""
                     QFrame#LayoutCard {
-                        background: #1E2533;
-                        border: 2px solid #2D7DFF;
+                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1E2738, stop:1 #141B26);
+                        border: 2px solid #2563EB;
                         border-radius: 12px;
                     }
                 """)
@@ -265,13 +311,13 @@ if QT_AVAILABLE:
             else:
                 self.setStyleSheet("""
                     QFrame#LayoutCard {
-                        background: #181D26;
-                        border: 1px solid #2A3241;
+                        background: #111620;
+                        border: 1px solid #1E2636;
                         border-radius: 12px;
                     }
                     QFrame#LayoutCard:hover {
                         border: 1px solid #3B82F6;
-                        background: #1B2230;
+                        background: #151C28;
                     }
                 """)
 
@@ -282,10 +328,9 @@ if QT_AVAILABLE:
     class RidaAppearanceWindow(QMainWindow):
         def __init__(self):
             super().__init__()
-            self.setWindowTitle("RIDA Appearance — Desktop Styling")
-            self.resize(780, 620)
+            self.setWindowTitle("RIDA OS Appearance")
+            self.resize(840, 640)
             self.current_layout = "windows_classic"
-            self.current_color = "#2D7DFF"
             self._setup_ui()
             self._apply_global_styles()
 
@@ -293,29 +338,29 @@ if QT_AVAILABLE:
             central = QWidget()
             self.setCentralWidget(central)
             main_layout = QVBoxLayout(central)
-            main_layout.setContentsMargins(28, 28, 28, 28)
-            main_layout.setSpacing(20)
+            main_layout.setContentsMargins(28, 24, 28, 24)
+            main_layout.setSpacing(18)
 
-            # Top Header
+            # Top Header Bar
             header_box = QHBoxLayout()
             title_col = QVBoxLayout()
-            h1 = QLabel("Desktop Appearance")
+            h1 = QLabel("Desktop Customization")
             h1.setStyleSheet("font-size: 24px; font-weight: 800; color: #FFFFFF;")
-            sub = QLabel("Customize your desktop layout, accent colors, and desktop experience.")
+            sub = QLabel("Craft your desktop layout, accent colors, and dark/light mode.")
             sub.setStyleSheet("font-size: 13px; color: #94A3B8;")
             title_col.addWidget(h1)
             title_col.addWidget(sub)
             header_box.addLayout(title_col)
             header_box.addStretch()
 
-            logo_badge = QLabel("RIDA OS")
+            logo_badge = QLabel("RIDA OS 1.0")
             logo_badge.setStyleSheet("""
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #2D7DFF, stop:1 #1E40AF);
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #2563EB, stop:1 #1D4ED8);
                 color: #FFFFFF;
                 font-weight: 800;
-                font-size: 13px;
+                font-size: 12px;
                 padding: 6px 14px;
-                border-radius: 14px;
+                border-radius: 12px;
             """)
             header_box.addWidget(logo_badge)
             main_layout.addLayout(header_box)
@@ -324,11 +369,11 @@ if QT_AVAILABLE:
             tabs = QTabWidget()
             tabs.setObjectName("AppearanceTabs")
 
-            # Tab 1: Layouts
+            # TAB 1: Layouts
             layout_tab = QWidget()
-            layout_tab_v = QVBoxLayout(layout_tab)
-            layout_tab_v.setContentsMargins(12, 16, 12, 12)
-            layout_tab_v.setSpacing(14)
+            layout_v = QVBoxLayout(layout_tab)
+            layout_v.setContentsMargins(14, 16, 14, 14)
+            layout_v.setSpacing(14)
 
             grid = QGridLayout()
             grid.setSpacing(14)
@@ -338,7 +383,7 @@ if QT_AVAILABLE:
 
             row, col = 0, 0
             for key, meta in LAYOUT_META.items():
-                card = LayoutCard(key, meta, self._on_layout_chosen)
+                card = ModernLayoutCard(key, meta, self._on_layout_chosen)
                 self.btn_group.addButton(card.radio)
                 self.cards[key] = card
                 grid.addWidget(card, row, col)
@@ -347,84 +392,152 @@ if QT_AVAILABLE:
                     col = 0
                     row += 1
 
-            layout_tab_v.addLayout(grid)
-            layout_tab_v.addStretch()
+            layout_v.addLayout(grid)
+            layout_v.addStretch()
 
-            # Apply Layout Action Bar
+            # Apply Action Bar
             action_bar = QHBoxLayout()
-            self.status_lbl = QLabel("Ready to apply layout")
+            self.status_lbl = QLabel("Ready to personalize desktop")
             self.status_lbl.setStyleSheet("font-size: 12px; color: #94A3B8;")
             action_bar.addWidget(self.status_lbl)
             action_bar.addStretch()
 
-            apply_btn = QPushButton("Apply Layout")
+            apply_btn = QPushButton("Apply Desktop Layout")
             apply_btn.setObjectName("PrimaryButton")
-            apply_btn.setFixedHeight(38)
+            apply_btn.setFixedHeight(40)
             apply_btn.clicked.connect(self._apply_layout_action)
             action_bar.addWidget(apply_btn)
-            layout_tab_v.addLayout(action_bar)
+            layout_v.addLayout(action_bar)
 
             tabs.addTab(layout_tab, "Desktop Layout")
 
-            # Tab 2: Theme & Accent Color
+            # TAB 2: Themes & Colors
             theme_tab = QWidget()
             theme_v = QVBoxLayout(theme_tab)
-            theme_v.setContentsMargins(16, 20, 16, 16)
-            theme_v.setSpacing(18)
+            theme_v.setContentsMargins(20, 20, 20, 20)
+            theme_v.setSpacing(20)
 
-            theme_h1 = QLabel("Accent Color")
-            theme_h1.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF;")
-            theme_v.addWidget(theme_h1)
+            # Accent Color Section
+            accent_title = QLabel("System Accent Color")
+            accent_title.setStyleSheet("font-size: 16px; font-weight: 700; color: #FFFFFF;")
+            theme_v.addWidget(accent_title)
 
-            theme_sub = QLabel("Select an accent color for active window highlights, buttons, and slider elements.")
-            theme_sub.setStyleSheet("font-size: 12px; color: #94A3B8;")
-            theme_v.addWidget(theme_sub)
+            accent_sub = QLabel("Select an accent color for buttons, active window borders, slider controls, and highlights.")
+            accent_sub.setStyleSheet("font-size: 12px; color: #94A3B8;")
+            theme_v.addWidget(accent_sub)
 
-            colors_box = QHBoxLayout()
-            colors_box.setSpacing(14)
-            for name, hex_val in ACCENT_COLORS:
+            colors_row = QHBoxLayout()
+            colors_row.setSpacing(14)
+            for name, hex_val, rgb_str in ACCENT_COLORS:
                 btn = QPushButton(name)
-                btn.setFixedHeight(40)
+                btn.setFixedHeight(42)
+                btn.setCursor(Qt.CursorShape.PointingHandCursor)
                 btn.setStyleSheet(f"""
                     QPushButton {{
                         background-color: {hex_val};
                         color: #FFFFFF;
-                        font-weight: bold;
-                        border-radius: 8px;
+                        font-weight: 700;
+                        font-size: 12px;
+                        border-radius: 10px;
                         padding: 8px 16px;
+                        border: 2px solid transparent;
                     }}
                     QPushButton:hover {{
                         border: 2px solid #FFFFFF;
                     }}
                 """)
-                btn.clicked.connect(lambda _, h=hex_val: self._apply_color_action(h))
-                colors_box.addWidget(btn)
-            theme_v.addLayout(colors_box)
+                btn.clicked.connect(lambda _, n=name, h=hex_val, r=rgb_str: self._apply_color_action(n, h, r))
+                colors_row.addWidget(btn)
+            theme_v.addLayout(colors_row)
 
-            theme_v.addSpacing(20)
-            style_h1 = QLabel("Desktop Theme")
-            style_h1.setStyleSheet("font-size: 16px; font-weight: bold; color: #FFFFFF;")
-            theme_v.addWidget(style_h1)
+            theme_v.addSpacing(12)
 
-            theme_mode_box = QHBoxLayout()
-            self.dark_btn = QPushButton("🌙 RIDA Dark (Default)")
-            self.dark_btn.setStyleSheet("background: #1F2937; color: white; border: 1px solid #374151; padding: 12px; border-radius: 8px; font-weight: bold;")
-            self.dark_btn.clicked.connect(lambda: self._apply_theme_action("dark"))
+            # Theme Mode Section (Dark / Light)
+            mode_title = QLabel("Color Theme")
+            mode_title.setStyleSheet("font-size: 16px; font-weight: 700; color: #FFFFFF;")
+            theme_v.addWidget(mode_title)
 
-            self.light_btn = QPushButton("☀️ RIDA Light")
-            self.light_btn.setStyleSheet("background: #F3F4F6; color: #111827; border: 1px solid #E5E7EB; padding: 12px; border-radius: 8px; font-weight: bold;")
-            self.light_btn.clicked.connect(lambda: self._apply_theme_action("light"))
+            modes_row = QHBoxLayout()
+            modes_row.setSpacing(14)
 
-            theme_mode_box.addWidget(self.dark_btn)
-            theme_mode_box.addWidget(self.light_btn)
-            theme_v.addLayout(theme_mode_box)
+            dark_card = QPushButton("🌙  RIDA Dark Mode")
+            dark_card.setFixedHeight(54)
+            dark_card.setCursor(Qt.CursorShape.PointingHandCursor)
+            dark_card.setStyleSheet("""
+                QPushButton {
+                    background: #111620;
+                    color: #FFFFFF;
+                    border: 2px solid #2563EB;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    text-align: center;
+                }
+                QPushButton:hover {
+                    background: #182030;
+                }
+            """)
+            dark_card.clicked.connect(lambda: self._apply_theme_mode_action("dark"))
+
+            light_card = QPushButton("☀️  RIDA Light Mode")
+            light_card.setFixedHeight(54)
+            light_card.setCursor(Qt.CursorShape.PointingHandCursor)
+            light_card.setStyleSheet("""
+                QPushButton {
+                    background: #F1F5F9;
+                    color: #0F172A;
+                    border: 1px solid #CBD5E1;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    text-align: center;
+                }
+                QPushButton:hover {
+                    background: #FFFFFF;
+                    border: 2px solid #2563EB;
+                }
+            """)
+            light_card.clicked.connect(lambda: self._apply_theme_mode_action("light"))
+
+            modes_row.addWidget(dark_card)
+            modes_row.addWidget(light_card)
+            theme_v.addLayout(modes_row)
+
+            theme_v.addSpacing(12)
+
+            # Wallpaper Quick Switcher
+            wp_title = QLabel("Desktop Wallpaper")
+            wp_title.setStyleSheet("font-size: 16px; font-weight: 700; color: #FFFFFF;")
+            theme_v.addWidget(wp_title)
+
+            wp_row = QHBoxLayout()
+            wp_btn = QPushButton("🌌 Set Official RIDA Sapphire Wallpaper")
+            wp_btn.setFixedHeight(44)
+            wp_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            wp_btn.setStyleSheet("""
+                QPushButton {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1E293B, stop:1 #0F172A);
+                    color: #38BDF8;
+                    border: 1px solid #334155;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    padding: 8px 20px;
+                }
+                QPushButton:hover {
+                    border: 1px solid #38BDF8;
+                    color: #FFFFFF;
+                }
+            """)
+            wp_btn.clicked.connect(self._apply_official_wallpaper)
+            wp_row.addWidget(wp_btn)
+            wp_row.addStretch()
+            theme_v.addLayout(wp_row)
 
             theme_v.addStretch()
             tabs.addTab(theme_tab, "Themes && Colors")
 
             main_layout.addWidget(tabs)
-
-            # Set default selection
             self.cards["windows_classic"].radio.setChecked(True)
 
         def _on_layout_chosen(self, key):
@@ -434,40 +547,35 @@ if QT_AVAILABLE:
 
         def _apply_layout_action(self):
             success, msg = apply_plasma_layout(self.current_layout)
-            if success:
-                self.status_lbl.setText(f"✓ {msg}")
-                self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981;")
-            else:
-                self.status_lbl.setText(f"✗ {msg}")
-                self.status_lbl.setStyleSheet("font-size: 12px; color: #EF4444;")
+            self.status_lbl.setText(f"✓ {msg}" if success else f"✗ {msg}")
+            self.status_lbl.setStyleSheet(f"font-size: 12px; color: {'#10B981' if success else '#EF4444'}; font-weight: 600;")
 
-        def _apply_color_action(self, hex_val):
-            self.current_color = hex_val
-            success, msg = apply_accent_color(hex_val)
-            if success:
-                self.status_lbl.setText(f"✓ {msg}")
-                self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981;")
-            else:
-                self.status_lbl.setText(f"✗ {msg}")
-                self.status_lbl.setStyleSheet("font-size: 12px; color: #EF4444;")
+        def _apply_color_action(self, name, hex_val, rgb_str):
+            success, msg = apply_accent_color(name, hex_val, rgb_str)
+            self.status_lbl.setText(f"✓ {msg}" if success else f"✗ {msg}")
+            self.status_lbl.setStyleSheet(f"font-size: 12px; color: {'#10B981' if success else '#EF4444'}; font-weight: 600;")
 
-        def _apply_theme_action(self, mode):
+        def _apply_theme_mode_action(self, mode):
             success, msg = apply_theme_mode(mode)
-            if success:
-                self.status_lbl.setText(f"✓ {msg}")
-                self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981;")
-            else:
-                self.status_lbl.setText(f"✗ {msg}")
-                self.status_lbl.setStyleSheet("font-size: 12px; color: #EF4444;")
+            self.status_lbl.setText(f"✓ {msg}" if success else f"✗ {msg}")
+            self.status_lbl.setStyleSheet(f"font-size: 12px; color: {'#10B981' if success else '#EF4444'}; font-weight: 600;")
+
+        def _apply_official_wallpaper(self):
+            wp_path = "/usr/share/rida/wallpapers/rida-sapphire-dark.svg"
+            if not os.path.exists(wp_path):
+                wp_path = str(SCRIPT_DIR.parent.parent / "live-build" / "config" / "includes.chroot" / "usr" / "share" / "rida" / "wallpapers" / "rida-sapphire-dark.svg")
+            success, msg = apply_wallpaper(wp_path)
+            self.status_lbl.setText(f"✓ {msg}" if success else f"✗ {msg}")
+            self.status_lbl.setStyleSheet("font-size: 12px; color: #10B981; font-weight: 600;")
 
         def _apply_global_styles(self):
             self.setStyleSheet("""
                 QMainWindow {
-                    background-color: #0F1218;
+                    background-color: #0B0E14;
                 }
                 QTabWidget::pane {
-                    border: 1px solid #202632;
-                    background-color: #141820;
+                    border: 1px solid #1C2331;
+                    background-color: #10151E;
                     border-radius: 12px;
                     top: -1px;
                 }
@@ -475,84 +583,34 @@ if QT_AVAILABLE:
                     background: transparent;
                     color: #94A3B8;
                     font-size: 13px;
-                    font-weight: 600;
-                    padding: 10px 20px;
+                    font-weight: 700;
+                    padding: 10px 22px;
                     border-bottom: 2px solid transparent;
                 }
                 QTabBar::tab:selected {
-                    color: #2D7DFF;
-                    border-bottom: 2px solid #2D7DFF;
+                    color: #38BDF8;
+                    border-bottom: 2px solid #38BDF8;
                 }
                 QTabBar::tab:hover {
                     color: #FFFFFF;
                 }
                 QPushButton#PrimaryButton {
-                    background-color: #2D7DFF;
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #2563EB, stop:1 #1D4ED8);
                     color: #FFFFFF;
                     font-size: 13px;
-                    font-weight: bold;
-                    padding: 8px 24px;
-                    border-radius: 8px;
+                    font-weight: 700;
+                    padding: 8px 26px;
+                    border-radius: 10px;
                     border: none;
                 }
                 QPushButton#PrimaryButton:hover {
-                    background-color: #1D6AE5;
-                }
-                QRadioButton {
-                    color: #FFFFFF;
+                    background: #1D4ED8;
                 }
                 QRadioButton::indicator {
                     width: 18px;
                     height: 18px;
                 }
             """)
-
-else:
-    # Minimal fallback CLI / Tkinter runner if Qt is not installed on host
-    import tkinter as tk
-    from tkinter import ttk, messagebox
-
-    class RidaAppearanceWindow:
-        def __init__(self):
-            self.root = tk.Tk()
-            self.root.title("RIDA Appearance (Demo Mode)")
-            self.root.geometry("640x500")
-            self.root.configure(bg="#0F1218")
-            self.current_layout = tk.StringVar(value="windows_classic")
-            self._setup_ui()
-
-        def _setup_ui(self):
-            lbl = tk.Label(self.root, text="RIDA OS Appearance", font=("Helvetica", 18, "bold"), fg="#FFFFFF", bg="#0F1218")
-            lbl.pack(pady=15)
-            
-            sub = tk.Label(self.root, text="Select your preferred desktop layout style:", fg="#94A3B8", bg="#0F1218")
-            sub.pack(pady=5)
-
-            box = tk.Frame(self.root, bg="#181D26", padx=15, pady=15)
-            box.pack(fill="both", expand=True, padx=20, pady=10)
-
-            for key, meta in LAYOUT_META.items():
-                rb = tk.Radiobutton(
-                    box, text=f"{meta['title']} — {meta['desc']}",
-                    variable=self.current_layout, value=key,
-                    fg="#FFFFFF", bg="#181D26", selectcolor="#2D7DFF",
-                    activebackground="#181D26", activeforeground="#FFFFFF",
-                    font=("Helvetica", 11)
-                )
-                rb.pack(anchor="w", pady=10)
-
-            btn = tk.Button(self.root, text="Apply Layout", font=("Helvetica", 12, "bold"),
-                            bg="#2D7DFF", fg="#FFFFFF", padx=20, pady=8, command=self._apply)
-            btn.pack(pady=15)
-
-        def _apply(self):
-            key = self.current_layout.get()
-            success, msg = apply_plasma_layout(key)
-            messagebox.showinfo("RIDA Appearance", msg)
-
-        def show(self):
-            self.root.mainloop()
-
 
 def main():
     if QT_AVAILABLE:
@@ -562,8 +620,7 @@ def main():
         win.show()
         sys.exit(app.exec())
     else:
-        win = RidaAppearanceWindow()
-        win.show()
+        print("PyQt6 is required.")
 
 if __name__ == "__main__":
     main()

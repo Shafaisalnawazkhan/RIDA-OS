@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -e
+
+REPO_BASE="https://raw.githubusercontent.com/Shafaisalnawazkhan/RIDA-OS/main"
+TARGET_DIR="/usr/share/rida"
+
+if [ "$EUID" -ne 0 ]; then
+    echo "[-] Please run as root: sudo rida-update"
+    exit 1
+fi
+
+echo "[+] Pulling latest RIDA OS updates from GitHub..."
+mkdir -p "${TARGET_DIR}/apps/rida-appearance/layouts"
+curl -sSL "${REPO_BASE}/apps/rida-appearance/rida_appearance.py" -o "${TARGET_DIR}/apps/rida-appearance/rida_appearance.py"
+curl -sSL "${REPO_BASE}/apps/rida-appearance/layouts/windows_classic.js" -o "${TARGET_DIR}/apps/rida-appearance/layouts/windows_classic.js"
+curl -sSL "${REPO_BASE}/apps/rida-appearance/layouts/windows_modern.js" -o "${TARGET_DIR}/apps/rida-appearance/layouts/windows_modern.js"
+curl -sSL "${REPO_BASE}/apps/rida-appearance/layouts/macos_dock.js" -o "${TARGET_DIR}/apps/rida-appearance/layouts/macos_dock.js"
+curl -sSL "${REPO_BASE}/apps/rida-appearance/layouts/compact.js" -o "${TARGET_DIR}/apps/rida-appearance/layouts/compact.js"
+chmod +x "${TARGET_DIR}/apps/rida-appearance/rida_appearance.py"
+
+mkdir -p "${TARGET_DIR}/apps/rida-welcome"
+curl -sSL "${REPO_BASE}/apps/rida-welcome/rida_welcome.py" -o "${TARGET_DIR}/apps/rida-welcome/rida_welcome.py"
+chmod +x "${TARGET_DIR}/apps/rida-welcome/rida_welcome.py"
+
+mkdir -p "${TARGET_DIR}/wallpapers" "${TARGET_DIR}/icons"
+curl -sSL "${REPO_BASE}/live-build/config/includes.chroot/usr/share/rida/wallpapers/rida-sapphire-dark.svg" -o "${TARGET_DIR}/wallpapers/rida-sapphire-dark.svg"
+curl -sSL "${REPO_BASE}/live-build/config/includes.chroot/usr/share/rida/icons/rida-logo.svg" -o "${TARGET_DIR}/icons/rida-logo.svg"
+
+echo "[✓] RIDA OS is up to date!"
