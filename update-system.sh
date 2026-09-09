@@ -34,12 +34,19 @@ mkdir -p "${TARGET_DIR}/apps/rida-welcome"
 curl -sSL "${REPO_BASE}/apps/rida-welcome/rida_welcome.py" -o "${TARGET_DIR}/apps/rida-welcome/rida_welcome.py"
 chmod +x "${TARGET_DIR}/apps/rida-welcome/rida_welcome.py"
 
-echo "[3/4] Updating Wallpapers and Assets..."
+echo "[3/5] Updating Wallpapers, Icons, and Splash Screen..."
 mkdir -p "${TARGET_DIR}/wallpapers" "${TARGET_DIR}/icons"
 curl -sSL "${REPO_BASE}/live-build/config/includes.chroot/usr/share/rida/wallpapers/rida-sapphire-dark.svg" -o "${TARGET_DIR}/wallpapers/rida-sapphire-dark.svg"
 curl -sSL "${REPO_BASE}/live-build/config/includes.chroot/usr/share/rida/icons/rida-logo.svg" -o "${TARGET_DIR}/icons/rida-logo.svg"
 
-echo "[4/4] Installing /usr/bin/rida-update command..."
+# Install custom RIDA splash theme
+mkdir -p /usr/share/plasma/look-and-feel/org.rida.desktop/contents/splash
+curl -sSL "${REPO_BASE}/live-build/config/includes.chroot/usr/share/plasma/look-and-feel/org.rida.desktop/contents/splash/Splash.qml" -o /usr/share/plasma/look-and-feel/org.rida.desktop/contents/splash/Splash.qml
+curl -sSL "${REPO_BASE}/live-build/config/includes.chroot/usr/share/plasma/look-and-feel/org.rida.desktop/metadata.desktop" -o /usr/share/plasma/look-and-feel/org.rida.desktop/metadata.desktop
+kwriteconfig5 --file ksplashrc --group KSplash --key Theme org.rida.desktop 2>/dev/null || true
+kwriteconfig5 --file ksplashrc --group KSplash --key Engine KSplashQML 2>/dev/null || true
+
+echo "[4/5] Installing /usr/bin/rida-update command..."
 cp "$0" /usr/bin/rida-update || true
 chmod +x /usr/bin/rida-update || true
 

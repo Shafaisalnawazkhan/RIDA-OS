@@ -1,0 +1,15 @@
+[Desktop Entry]
+Comment=RIDA OS Look and Feel with custom Sapphire Splash
+Encoding=UTF-8
+Keywords=Desktop;Workspace;Appearance;Look and Feel;
+Name=RIDA OS
+Type=Service
+X-KDE-PluginInfo-Author=RIDA OS Team
+X-KDE-PluginInfo-Category=
+X-KDE-PluginInfo-Email=
+X-KDE-PluginInfo-License=GPLv2+
+X-KDE-PluginInfo-Name=org.rida.desktop
+X-KDE-PluginInfo-Version=1.0
+X-KDE-PluginInfo-Website=
+X-KDE-ServiceTypes=Plasma/LookAndFeel
+X-Plasma-MainScript=defaults
