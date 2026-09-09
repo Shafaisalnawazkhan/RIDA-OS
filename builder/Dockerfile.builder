@@ -22,7 +22,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-COPY builder/build-iso.sh /usr/local/bin/build-iso.sh
-RUN chmod +x /usr/local/bin/build-iso.sh
-
-ENTRYPOINT ["/usr/local/bin/build-iso.sh"]
+ENTRYPOINT ["/bin/bash", "/workspace/builder/build-iso.sh"]
